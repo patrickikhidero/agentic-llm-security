@@ -1,0 +1,41 @@
+# Pipeline Configuration
+# Controls the core agentic execution loop
+
+agent:
+  model: "gpt-4o"
+  max_steps: 15
+  step_timeout: 30
+  temperature: 0.0          # Deterministic for reproducibility
+  system_prompt_path: "configs/system_prompt.txt"
+
+tools:
+  retrieval:
+    enabled: true
+    collection: "enterprise_corpus"
+    top_k: 5
+    similarity_threshold: 0.72
+    treat_as_untrusted: true          # Content isolation principle
+    delimiter: "<<<RETRIEVED_CONTENT>>>"
+
+  code_execution:
+    enabled: true
+    sandbox: "restricted_python"
+    timeout_seconds: 10
+    allowed_imports: ["math", "json", "datetime", "re"]
+    blocked_imports: ["os", "sys", "subprocess", "socket", "requests"]
+
+  api_call:
+    enabled: true
+    allowed_domains: []               # Populated per task scenario
+    timeout_seconds: 15
+    require_hitl_for_post: true       # POST/PUT/DELETE require confirmation
+
+memory:
+  session_persistence: false          # Stateless by default
+  max_context_tokens: 8000
+
+logging:
+  level: "INFO"
+  log_tool_calls: true
+  log_planning_trace: true
+  log_dir: "data/results/logs"

@@ -1,0 +1,39 @@
+# Core API and server
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.9.2
+httpx==0.27.2
+
+# LLM provider SDKs
+openai==1.54.3
+anthropic==0.39.0
+google-generativeai==0.8.3
+
+# Vector database / RAG
+chromadb==0.5.18
+sentence-transformers==3.3.1
+
+# Data and evaluation
+pandas==2.2.3
+numpy==2.1.3
+scikit-learn==1.5.2
+matplotlib==3.9.3
+seaborn==0.13.2
+
+# Security / screening
+langchain==0.3.7
+langchain-openai==0.2.8
+
+# Code execution sandbox
+RestrictedPython==7.4
+
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+
+# Utilities
+python-dotenv==1.0.1
+pyyaml==6.0.2
+rich==13.9.4
+tqdm==4.67.1
