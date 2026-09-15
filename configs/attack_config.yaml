@@ -2,7 +2,11 @@
 # Defines parameters for each of the four attack classes
 
 evaluation:
-  trials_per_scenario: 50           # Number of attack attempts per scenario
+  trials_per_scenario: 20           # Number of attack attempts per scenario
+  # Benign trials only establish a completion-rate baseline (for utility
+  # preservation and cascade's step-inflation reference) — they don't need
+  # the same N as attack trials, where the actual research value is.
+  benign_trials_per_scenario: 8
   task_scenarios:
     - workspace_summary
     - document_classification

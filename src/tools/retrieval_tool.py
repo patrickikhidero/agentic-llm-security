@@ -31,20 +31,27 @@ class RetrievalTool:
     def __init__(self, config: dict) -> None:
         self.config = config
         self.top_k = config.get("top_k", 5)
-        self.threshold = config.get("similarity_threshold", 0.72)
+        self.threshold = config.get("similarity_threshold", 0.35)
         self.collection_name = config.get("collection", "enterprise_corpus")
         self._client: chromadb.Client | None = None
         self._collection = None
 
     def _get_collection(self):
         if self._collection is None:
-            host = os.getenv("CHROMA_HOST", "localhost")
-            port = int(os.getenv("CHROMA_PORT", "8001"))
-            self._client = chromadb.HttpClient(host=host, port=port)
-            ef = embedding_functions.DefaultEmbeddingFunction()
+            persist_dir = os.getenv("CHROMA_PERSIST_DIR", "data/chroma")
+            self._client = chromadb.PersistentClient(path=persist_dir)
+            # sentence-transformers rather than Chroma's bundled ONNX default —
+            # same model family, but reuses the one already vendored locally
+            # for GoalVerifier/InputScreener instead of a separate downloader.
+            ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name="sentence-transformers/all-MiniLM-L6-v2")
             self._collection = self._client.get_or_create_collection(
                 name=self.collection_name,
                 embedding_function=ef,
+                # Explicit cosine space so "1 - distance" below is a true
+                # cosine similarity (Chroma's default index space is L2,
+                # under which that arithmetic would not mean similarity).
+                metadata={"hnsw:space": "cosine"},
             )
         return self._collection
 
@@ -106,3 +113,11 @@ class RetrievalTool:
             metadatas=[meta],
         )
         logger.info(f"Indexed doc_id={doc_id} | poisoned={is_poisoned}")
+
+    def delete_document(self, doc_id: str) -> None:
+        """Remove a document from the corpus (used to clean up after
+        indirect-injection trials so poisoned content doesn't leak into
+        later, unrelated trials)."""
+        collection = self._get_collection()
+        collection.delete(ids=[doc_id])
+        logger.info(f"Deleted doc_id={doc_id}")

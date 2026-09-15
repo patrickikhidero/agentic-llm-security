@@ -11,10 +11,8 @@ Implements the Task Shield concept (Jia et al., 2025).
 """
 
 import logging
-import os
 
-import numpy as np
-from openai import OpenAI
+from src.common.embeddings import cosine_similarity
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +30,7 @@ class GoalVerifier:
         self.config    = config
         self.enabled   = config.get("enabled", True)
         self.threshold = config.get("consistency_threshold", 0.80)
-        self.model     = config.get("verification_model", "gpt-4o-mini")
         self.halt      = config.get("halt_on_inconsistency", True)
-        self._client   = None
-
-    def _get_client(self) -> OpenAI:
-        if self._client is None:
-            self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        return self._client
 
     def verify(self, original_goal: str, plan: dict, context: dict) -> dict:
         """
@@ -92,16 +83,7 @@ class GoalVerifier:
                     "method": "error_failopen", "evidence": str(exc)}
 
     def _embedding_similarity(self, text_a: str, text_b: str) -> float:
-        client = self._get_client()
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=[text_a[:1500], text_b[:1500]],
-        )
-        vec_a = np.array(response.data[0].embedding)
-        vec_b = np.array(response.data[1].embedding)
-        return float(
-            np.dot(vec_a, vec_b) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_b))
-        )
+        return cosine_similarity(text_a[:1500], text_b[:1500])
 
     def _describe_action(self, plan: dict) -> str:
         """Convert a plan dict to a natural language description for comparison."""

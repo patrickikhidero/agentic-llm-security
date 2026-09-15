@@ -28,6 +28,7 @@ data/poisoned/
 
 # ChromaDB local storage
 chroma_db/
+data/chroma/
 *.sqlite3
 
 # IDE

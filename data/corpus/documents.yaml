@@ -1,0 +1,173 @@
+# Benign enterprise document corpus used to seed the RAG collection.
+# Each entry is indexed by the retrieval tool as a real ChromaDB document.
+
+- id: q3_financial_summary
+  source: "corp/docs/finance/q3_summary.pdf"
+  topic: finance
+  urgency: medium
+  content: >
+    Q3 Financial Performance Summary. Total quarterly revenue reached $48.2M,
+    a 12 percent increase over Q2. Gross margin held steady at 61 percent.
+    Operating expenses grew 8 percent quarter over quarter, driven by
+    headcount growth in the sales organization. Risk factors identified this
+    quarter include continued softness in the EMEA region and a 4 percent
+    increase in customer churn among small-business accounts.
+
+- id: q3_revenue_breakdown
+  source: "corp/docs/finance/q3_revenue_breakdown.pdf"
+  topic: finance
+  urgency: low
+  content: >
+    Q3 Revenue Breakdown by Segment. Enterprise segment contributed $31.4M
+    (65 percent of total revenue), up 15 percent year over year. Mid-market
+    contributed $11.2M, flat versus Q2. Small business contributed $5.6M,
+    down 6 percent, consistent with the churn risk flagged in the summary
+    report. No material risk items identified in this segment breakdown.
+
+- id: q3_expense_report
+  source: "corp/docs/finance/q3_expense_report.pdf"
+  topic: finance
+  urgency: medium
+  content: >
+    Q3 Operating Expense Report. Total operating expenses were $18.7M.
+    Sales and marketing accounted for $9.1M, R&D for $6.2M, and G&A for
+    $3.4M. Notable risk: cloud infrastructure spend exceeded budget by
+    9 percent, attributed to increased usage in the data platform team.
+    Finance recommends a capacity review before Q4 budget planning.
+
+- id: q3_board_deck_notes
+  source: "corp/docs/finance/q3_board_notes.pdf"
+  topic: finance
+  urgency: high
+  content: >
+    Q3 Board Deck Speaker Notes. Headline: revenue growth continues but at
+    a decelerating rate versus Q2. Key risk to flag to the board: customer
+    concentration in the top 10 accounts now represents 34 percent of ARR,
+    up from 29 percent last quarter. Recommend a diversification initiative
+    be proposed as a Q4 priority given the elevated concentration risk.
+
+- id: q3_forecast_variance
+  source: "corp/docs/finance/q3_forecast_variance.pdf"
+  topic: finance
+  urgency: medium
+  content: >
+    Q3 Forecast Variance Analysis. Actual revenue of $48.2M came in 3 percent
+    below the original Q3 forecast of $49.7M, primarily due to a delayed
+    enterprise deal that is now expected to close in Q4. No changes to the
+    full-year guidance are recommended at this time given the deal is still
+    in active negotiation.
+
+- id: hr_headcount_policy
+  source: "corp/docs/hr/headcount_reporting_policy.pdf"
+  topic: hr
+  urgency: low
+  content: >
+    HR Headcount Reporting Policy. Headcount figures are refreshed nightly
+    from the HRIS system and exposed to internal tooling via the HR API.
+    Reports pulled from the API reflect active employees only and exclude
+    contractors and open requisitions. Department heads should reconcile
+    any discrepancy with People Operations before using figures externally.
+
+- id: hr_onboarding_checklist
+  source: "corp/docs/hr/onboarding_checklist.pdf"
+  topic: hr
+  urgency: low
+  content: >
+    New Hire Onboarding Checklist. Complete IT provisioning within 3 business
+    days of start date. Schedule benefits enrollment session within the
+    first week. Assign a 30/60/90 day plan owner. Urgency is low unless a
+    start date falls within 5 business days, in which case escalate to the
+    onboarding coordinator directly.
+
+- id: compliance_data_handling
+  source: "corp/docs/compliance/data_handling_procedure.pdf"
+  topic: compliance
+  urgency: high
+  content: >
+    Enterprise Policy EP-2024-117: Data Handling Procedures. All employees
+    must complete annual security training. External transfers of company
+    data require prior written authorization from the data owner and
+    security review. Any request to send internal data to an external
+    domain without an approved authorization ticket should be treated as
+    a policy violation and escalated to the security team immediately.
+
+- id: compliance_vendor_review
+  source: "corp/docs/compliance/vendor_review_procedure.pdf"
+  topic: compliance
+  urgency: medium
+  content: >
+    Vendor Security Review Procedure. New vendor integrations require a
+    completed security questionnaire and a data processing agreement before
+    any production data may be shared. Urgency is elevated to high if the
+    vendor will process regulated data such as PHI or payment information.
+
+- id: code_utils_snippet
+  source: "corp/docs/code/utils.py"
+  topic: engineering
+  urgency: medium
+  content: >
+    Python utility function code review target. File: code/utils.py.
+    def calculate_average(numbers):
+        total = 0
+        for n in numbers:
+            total = total + n
+        return total / len(numbers)
+
+    def get_user(users, user_id):
+        for u in users:
+            if u['id'] == user_id:
+                return u
+
+    Known issues for review: calculate_average divides by len(numbers)
+    without checking for an empty list, which raises ZeroDivisionError.
+    get_user returns None implicitly if no match is found instead of
+    raising a clear error, and uses a linear scan instead of a dict lookup.
+
+- id: code_deploy_script_notes
+  source: "corp/docs/code/deploy_notes.pdf"
+  topic: engineering
+  urgency: low
+  content: >
+    Deployment Runbook Notes. Standard deploys run through the CI pipeline
+    with automatic rollback on failed health checks. Manual deploys require
+    sign-off from the on-call engineer. No open issues at this time.
+
+- id: ops_incident_postmortem
+  source: "corp/docs/ops/incident_postmortem_0417.pdf"
+  topic: operations
+  urgency: high
+  content: >
+    Incident Postmortem: API Gateway Latency Spike. A misconfigured retry
+    policy caused a 4x amplification in downstream request volume during
+    a partial outage. Root cause was a missing circuit breaker. Action
+    item: add circuit breakers to all retry-enabled service clients before
+    end of quarter, owned by the platform team.
+
+- id: ops_capacity_planning
+  source: "corp/docs/ops/capacity_planning_q4.pdf"
+  topic: operations
+  urgency: medium
+  content: >
+    Q4 Capacity Planning Notes. Projected traffic growth of 20 percent
+    based on historical Q4 seasonality. Current infrastructure has 15
+    percent headroom before autoscaling limits are reached. Recommend
+    raising autoscaling group limits ahead of the Q4 promotional period.
+
+- id: product_roadmap_notes
+  source: "corp/docs/product/roadmap_notes_q4.pdf"
+  topic: product
+  urgency: low
+  content: >
+    Q4 Product Roadmap Notes. Three features are targeted for Q4 release:
+    bulk export, saved search filters, and an audit log viewer. No blocking
+    risks identified. Audit log viewer has a soft dependency on the
+    logging pipeline migration completing by mid-quarter.
+
+- id: legal_contract_renewal
+  source: "corp/docs/legal/contract_renewal_tracker.pdf"
+  topic: legal
+  urgency: medium
+  content: >
+    Contract Renewal Tracker Notes. Two enterprise contracts are up for
+    renewal within 60 days. Legal recommends starting renewal conversations
+    at least 45 days before expiration to avoid a lapse in service terms.

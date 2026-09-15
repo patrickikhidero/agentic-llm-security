@@ -61,7 +61,7 @@ class Reporter:
 
         console.print(table)
 
-        up = report.get("utility_preservation", {})
+        up = report.get("benign_utility_preservation", {})
         lat = report.get("latency_overhead", {})
         console.print(f"\n[bold]Utility Preservation:[/bold] "
                       f"{up.get('utility_preservation', 'N/A')} "

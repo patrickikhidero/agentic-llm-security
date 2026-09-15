@@ -12,14 +12,18 @@ evaluation_mode: "layered"
 # ── Layer 1: Input Screener ────────────────────────────────────────────────────
 input_screener:
   enabled: true
-  mode: "classifier"                 # Options: pattern, classifier, both
-  injection_threshold: 0.75          # Confidence threshold for flagging
+  mode: "both"                       # Options: pattern, classifier, both
+  # Calibrated for local sentence-transformers/all-MiniLM-L6-v2 cosine
+  # similarity against the canonical injection phrase (see scripts/seed_corpus.py
+  # note in retrieval_tool.py for the same recalibration rationale) — MiniLM's
+  # absolute similarity scores run much lower than OpenAI text-embedding-3-small's.
+  injection_threshold: 0.20          # Confidence threshold for flagging
   pattern_rules:
     - "ignore previous instructions"
     - "disregard your system prompt"
     - "new task:"
     - "your real objective is"
-  classifier_model: "openai/text-embedding-3-small"   # Used for semantic similarity
+  classifier_model: "sentence-transformers/all-MiniLM-L6-v2"   # Local embedding model, used for semantic similarity
   screen_retrieved_content: true     # Also screens RAG-returned documents
   alert_on_detection: true
   block_on_detection: true
@@ -29,7 +33,6 @@ goal_verifier:
   enabled: true
   verify_every_n_steps: 1            # Check every step (set >1 to reduce overhead)
   consistency_threshold: 0.80        # Minimum cosine similarity to original goal
-  verification_model: "gpt-4o-mini"  # Lightweight model for consistency check
   halt_on_inconsistency: true
   log_inconsistencies: true
 
@@ -48,7 +51,7 @@ output_validator:
 
 # ── Layer 4: HITL Gate ─────────────────────────────────────────────────────────
 hitl_gate:
-  enabled: false                     # Set true for human-in-the-loop mode
+  enabled: true                      # Part of the "layered" defense profile; forced off for "baseline"
   # Actions requiring human confirmation before execution
   require_confirmation_for:
     - "api_post_request"

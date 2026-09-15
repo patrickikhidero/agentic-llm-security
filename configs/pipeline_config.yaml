@@ -2,7 +2,7 @@
 # Controls the core agentic execution loop
 
 agent:
-  model: "gpt-4o"
+  model: "openai/gpt-oss-20b"       # Open-weight (Apache 2.0) model served via Groq (free tier)
   max_steps: 15
   step_timeout: 30
   temperature: 0.0          # Deterministic for reproducibility
@@ -12,8 +12,12 @@ tools:
   retrieval:
     enabled: true
     collection: "enterprise_corpus"
-    top_k: 5
-    similarity_threshold: 0.72
+    top_k: 6
+    # Calibrated for the local sentence-transformers/all-MiniLM-L6-v2 cosine
+    # similarity distribution (see scripts/seed_corpus.py docs) — MiniLM's
+    # similarity scores for genuinely relevant matches run much lower than
+    # OpenAI text-embedding-3-small's, which 0.72 was originally set for.
+    similarity_threshold: 0.35
     treat_as_untrusted: true          # Content isolation principle
     delimiter: "<<<RETRIEVED_CONTENT>>>"
 
@@ -26,7 +30,8 @@ tools:
 
   api_call:
     enabled: true
-    allowed_domains: []               # Populated per task scenario
+    allowed_domains: []               # Set dynamically per defense profile (see Pipeline.run)
+    legitimate_domains: ["127.0.0.1:8090"]   # Mock HR API — the only domain any benign task needs
     timeout_seconds: 15
     require_hitl_for_post: true       # POST/PUT/DELETE require confirmation
 
