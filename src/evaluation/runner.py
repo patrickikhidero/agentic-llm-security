@@ -116,7 +116,12 @@ GOAL_HIJACK_COMBOS = [
 CASCADE_COMBOS = [
     (method, depth)
     for method in ("malformed_tool_response", "timeout_injection", "schema_violation")
-    for depth in (2, 5, 10)
+    # depth=1 included because most benign task scenarios here resolve in a
+    # single tool call before finishing — at depths 2/5/10 the induced
+    # failure never coincides with an actual tool call for those tasks, so
+    # the attack silently never fires (observed: 0/10 early trials actually
+    # triggered a failure). Depth=1 gives it a real chance on those tasks.
+    for depth in (1, 2, 5, 10)
 ]
 
 TOOL_POISONING_COMBOS = [
