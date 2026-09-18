@@ -1,0 +1,192 @@
+# Paper 2 Evaluation — Findings & Process Log
+
+Running log of methodology decisions, infrastructure deviations from the
+original draft, bugs found and fixed, and real (non-placeholder) results as
+they come in. This is the evaluation log behind the paper, not the paper
+itself.
+
+Last updated: 2026-09-18.
+
+---
+
+## 1. Status
+
+**228 valid trials collected** (of an eventual ~740). Breakdown:
+
+| Attack class | Baseline | Layered |
+|---|---|---|
+| benign | 68 | 0 (recollecting — see §4, bug 9) |
+| indirect_injection | 80 (complete) | 0 (recollecting) |
+| goal_hijacking | 80 (complete) | 0 (recollecting) |
+| cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
+| tool_poisoning | 0 | 0 |
+
+Run is gated by Groq's free-tier daily token quota (~100-120 trials/day
+achievable in practice); resumes automatically once per day via a
+scheduled cron job plus manual/session checks. See `data/results/run.log`
+for the full run history and `data/results/trials_checkpoint.jsonl` for
+every trial recorded so far (one JSON object per line).
+
+---
+
+## 2. Infrastructure — deviates from the original paper draft
+
+The paper draft described an
+OpenAI-GPT-4o-based pipeline. The actual experimental stack differs, and
+the paper's Methodology section (3.1) will need to be corrected to match
+what was actually run:
+
+- **Planner LLM**: `openai/gpt-oss-20b` served via Groq — an open-weight
+  (Apache 2.0) model, not GPT-4o. Chosen for cost (free tier) and to match
+  an "open source work" framing. Uses native OpenAI-style function-calling,
+  not a hand-rolled JSON-in-content protocol (see bug 5 below for why).
+- **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2`, running
+  locally — not OpenAI `text-embedding-3-small`. Used by both the
+  retrieval tool's vector index and the GoalVerifier/InputScreener
+  similarity checks.
+- **Vector store**: ChromaDB embedded `PersistentClient` (single process,
+  on-disk), not a client-server `HttpClient` deployment.
+- **Mock HR API**: a local `http.server` instance
+  (`src/tools/mock_hr_api.py`) stands in for the enterprise HR API used by
+  the `api_data_retrieval` task — no real external service.
+- **Rate limits**: Groq's free tier caps at **200,000 tokens/day per
+  model**, on a rolling 24-hour window (not a fixed daily reset — observed
+  empirically, not documented). This bounds throughput to roughly
+  100-120 trials/day regardless of retry logic, and is the reason data
+  collection spans many calendar days rather than a single run.
+
+---
+
+## 3. Trial design changes from the original draft
+
+- `trials_per_scenario` reduced from 50 to **20** (attack trials) given the
+  quota constraint. Each attack-class × defense-profile row in the eventual
+  Table 1 aggregates to n=80 (20 × 4 tasks).
+- Benign trial count **decoupled** from attack trial count
+  (`benign_trials_per_scenario: 8`) — benign trials only establish a
+  completion-rate baseline, so they don't need the same N.
+- `cascade_exploit` injection depths: **added depth=1** (originally 2/5/10
+  only) after discovering mid-run that the induced failure never fired for
+  tasks resolving in a single tool call (see bug 8).
+- Retrieval `top_k` raised 5→6, `similarity_threshold` lowered 0.72→0.35 —
+  recalibrated for MiniLM's cosine similarity distribution, which runs
+  much lower than OpenAI's embedding model for equally-relevant text (see
+  bug 4 and the calibration data in the commit
+  messages).
+- `input_screener.mode` corrected from `"classifier"`-only to `"both"`
+  (pattern + classifier combined) to match what the paper's own
+  methodology text (§3.4) describes; `injection_threshold` lowered
+  0.75→0.20 for the same MiniLM recalibration reason.
+- API call domain allowlist now **varies by defense_profile**: empty under
+  `baseline` (all domains reachable — a real undefended condition),
+  populated with only the mock HR API's address under `layered`. The
+  original design had this as a static, always-on config value, which
+  would have pre-blocked every URL-based exfiltration attempt even in the
+  "undefended" condition.
+
+---
+
+## 4. Bugs found and fixed (chronological)
+
+1. **`defense_profile` never wired to anything.** The API accepted the
+   field but no code path used it to toggle any defense — "baseline" vs
+   "layered" was never actually different. Fixed in the `Pipeline.run()`
+   refactor (`_effective_defense_flags`).
+2. **Planner never told the model what tools existed.** No tool
+   descriptions were ever sent to the LLM, so tool-description-poisoning
+   attacks had nothing to poison. Fixed by building the tool registry into
+   the planning call.
+3. **Attack modules never invoked by the runner.** `runner.py` referenced
+   an `_attack_success` field that nothing ever set — every attack trial
+   silently recorded "no attack." Rewrote the runner to actually mount
+   each attack class and score real outcomes.
+4. **Retrieval similarity math assumed the wrong distance space.**
+   `1 - distance >= threshold` assumes cosine distance; Chroma's default
+   index space is squared L2. Fixed by setting `hnsw:space: cosine`
+   explicitly.
+5. **gpt-oss models hallucinate an undeclared tool
+   (`repo_browser.open_file`)** when prompted with a hand-rolled "respond
+   with this JSON shape" protocol instead of real function-calling — this
+   caused 100% of planning calls to fail with `tool_use_failed`. Fixed by
+   switching the planner to native OpenAI-style `tools`/`tool_choice`
+   function-calling.
+6. **Groq's 200,000 tokens/day account-wide cap** — discovered only after
+   burning through it during initial smoke testing. Required building a
+   proactive token-bucket rate limiter, per-trial checkpointing, and a
+   `DailyQuotaExhausted` exception that stops the run cleanly (no wasted
+   retries, no lost data) instead of crashing.
+7. **`compute_utility_preservation` crashed** (`NoneType / float`) when
+   only one of the baseline/layered pools had data yet — the guard only
+   checked `baseline["tcr"]`, not `layered["tcr"]`.
+8. **`cascade_exploit`'s induced failures never fired.** All 10 early
+   trials completed in exactly 2 loop-steps with zero "Cascade failure
+   injected" log lines — the tested depths (2/5/10) never coincided with
+   these short tasks' one real tool call. Fixed by adding depth=1; the 10
+   pre-fix trials were purged (their trial_ids now map to different combos
+   under the corrected indexing and would otherwise be silently skipped).
+9. **Critical: `goal_verifier` had a 100% false-positive rate on every
+   single layered-profile trial**, benign and attack alike — not a
+   defense success, a broken evaluator. Root cause: native tool-calling
+   leaves `message.content` (surfaced as the plan's "reasoning") empty,
+   and `_describe_action()` appended a bare trailing `"Reasoning: "` with
+   nothing after it, which measurably diluted the embedding similarity to
+   the original goal just enough to fall under the 0.80 threshold,
+   deterministically, every time. Confirmed via direct calibration
+   (0.7815 with the empty suffix vs. 0.8122 without, against the same
+   0.80 threshold). **This invalidated all 216 previously-collected
+   "layered" trials** (indirect_injection ×80, goal_hijacking ×80, benign
+   ×56) — every one of them was killed at step 1 regardless of content, so
+   the earlier-reported "0% ASR under layered defense" numbers for those
+   two attack classes were an artifact of this bug, not a real defense
+   result. Purged from the checkpoint; recollecting now under the fix.
+   Locked in with a regression test
+   (`tests/test_defenses.py::TestGoalVerifier`).
+10. **Overall ASR calculation diluted by benign trials.** `compute_asr()`
+    with no `attack_class` filter pooled *all* trials sharing a
+    `defense_profile`, benign included — since benign trials can never
+    "succeed" at an attack, this artificially deflated the "overall ASR"
+    figures. Fixed by excluding `attack_class == "benign"` from that pool.
+
+---
+
+## 5. Real results so far
+
+Only `indirect_injection` and `goal_hijacking` have complete, *valid*
+baseline-profile data (layered-profile data for both is being
+recollected post-bug-9-fix):
+
+| Attack class | ASR (undefended baseline) | n |
+|---|---|---|
+| indirect_injection | 10.0% | 80 |
+| goal_hijacking | 27.5% | 80 |
+
+Notably lower than the placeholder draft's assumed 37-51% baseline ASR
+range — plausibly because `gpt-oss-20b` (a 2026 open-weight model with
+presumably more safety tuning) resists these specific injection payloads
+better than GPT-4o did in the AgentDojo-era literature the placeholder
+numbers were extrapolated from. Worth discussing honestly in §5.3 rather
+than treated as a replication failure.
+
+**Do not yet trust any "layered" or utility-preservation numbers in
+`data/results/summary.json`** — they predate the bug-9 fix and will be
+overwritten as recollection proceeds. `trials_checkpoint.jsonl.pre-goalverifier-fix.bak`
+retains the pre-purge data for reference if needed.
+
+---
+
+## 6. Open items before the final paper write-up
+
+- [ ] Finish remaining trials: `cascade_exploit` (both profiles, from
+      scratch under corrected depths), `tool_poisoning` (both profiles,
+      not started), `indirect_injection`/`goal_hijacking`/`benign` layered
+      profile (recollecting post-fix).
+- [ ] Once benign-layered data exists again, re-check FPR for all four
+      defense layers (`MetricsCalculator.compute_fpr`) — confirm
+      goal_verifier's FPR has actually dropped from 100% to something
+      reasonable, not just "no longer literally everything."
+- [ ] Confirm `cascade_exploit` failures are actually firing this time
+      (`grep -c "Cascade failure injected" data/results/run.log` should be
+      > 0 once those trials run).
+- [ ] Recompute and sanity-check the full Table 1 (ASR baseline/layered,
+      reduction, TCR, utility ratio) once all four attack classes have
+      both profiles complete.
