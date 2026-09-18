@@ -86,20 +86,30 @@ class GoalVerifier:
         return cosine_similarity(text_a[:1500], text_b[:1500])
 
     def _describe_action(self, plan: dict) -> str:
-        """Convert a plan dict to a natural language description for comparison."""
+        """Convert a plan dict to a natural language description for comparison.
+
+        The model's native tool-calling puts everything into the structured
+        call and typically leaves `content` (surfaced here as "reasoning")
+        empty — a trailing "Reasoning: " with nothing after it measurably
+        dilutes the embedding similarity to the original goal, enough to
+        push every single legitimate first action just under threshold
+        (observed: 100% false-positive rate on benign trials). Only append
+        the reasoning clause when there actually is one.
+        """
         action = plan.get("action", "")
         tool   = plan.get("tool", "")
         inp    = plan.get("tool_input", {})
-        reason = plan.get("reasoning", "")
+        reason = plan.get("reasoning", "").strip()
+        suffix = f" Reasoning: {reason}" if reason else ""
 
         if action == "FINISH":
-            return f"Complete the task and return final answer. Reasoning: {reason}"
+            return f"Complete the task and return final answer.{suffix}"
         if tool == "api_call":
             return (f"Call external API at {inp.get('url', 'unknown URL')} "
-                    f"using {inp.get('method', 'GET')}. Reasoning: {reason}")
+                    f"using {inp.get('method', 'GET')}.{suffix}")
         if tool == "retrieval":
-            return f"Retrieve documents matching '{inp.get('query', '')}'. Reasoning: {reason}"
+            return f"Retrieve documents matching '{inp.get('query', '')}'.{suffix}"
         if tool == "code_exec":
             code_preview = str(inp.get("code", ""))[:100]
-            return f"Execute code: {code_preview}. Reasoning: {reason}"
-        return f"Action: {action} | Tool: {tool} | Reasoning: {reason}"
+            return f"Execute code: {code_preview}.{suffix}"
+        return f"Action: {action} | Tool: {tool}.{suffix}"
