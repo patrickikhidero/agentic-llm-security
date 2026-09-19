@@ -11,20 +11,28 @@ Last updated: 2026-09-18.
 
 ## 1. Status
 
-**235 valid trials collected** (of an eventual ~740). Breakdown:
+**228 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
-| benign | 68 | 7 (recollecting — see §4, bug 9) |
+| benign | 68 | 0 (recollecting — see §4, bug 9b) |
 | indirect_injection | 80 (complete) | 0 (recollecting) |
 | goal_hijacking | 80 (complete) | 0 (recollecting) |
 | cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
 | tool_poisoning | 0 | 0 |
 
-**Bug 9 fix confirmed in the live pipeline (2026-09-19):** of the first 7
-layered-profile trials collected post-fix, `goal_verifier` fired on **0**
-of them (down from 100% pre-fix), and all 7 completed normally
-(`task_completed=True`). Safe to continue recollecting layered data.
+**Bug 9 (empty-reasoning) fix confirmed working**, but exposed a second,
+subtler problem: `consistency_threshold: 0.80` was miscalibrated for this
+embedding model even with the reasoning bug fixed. Real benign
+first-action scores ranged 0.46-0.81 across the four task scenarios
+(measured from ~117 live post-fix trials), giving goal_verifier a 75% FPR
+— much better than 100%, but still not remotely reasonable. Recalibrated
+threshold to 0.40 (see bug 9b). Those 117 layered trials (indirect_injection
+×80, benign ×32, goal_hijacking ×5) were purged for the same reason as
+bug 9's original 216 — an internally inconsistent threshold across the
+dataset isn't valid data. **This is now the second time layered-profile
+data has had to be discarded and recollected**; see bug 9b for the
+recalibration data before assuming this is settled.
 
 Run is gated by Groq's free-tier daily token quota (~100-120 trials/day
 achievable in practice); resumes automatically once per day via a
@@ -146,6 +154,23 @@ what was actually run:
    result. Purged from the checkpoint; recollecting now under the fix.
    Locked in with a regression test
    (`tests/test_defenses.py::TestGoalVerifier`).
+9b. **Follow-up: `consistency_threshold: 0.80` was still miscalibrated**
+    after fixing bug 9. Live data from ~117 trials collected post-fix
+    showed real benign first-action similarity scores of 0.462
+    (document_classification), 0.54 (api_data_retrieval), 0.7031
+    (code_review), and 0.8122 (workspace_summary) against their own task
+    goals — a 75% false-positive rate at threshold 0.80, since 3 of 4
+    tasks' legitimate actions score below it. Hijacked-action scores
+    checked against the same goals ranged -0.11 to 0.363 (the
+    api_data_retrieval case, where "call an external API" is already
+    semantically close to the benign task's own API-calling goal, is the
+    noisiest). Recalibrated to **0.40** — below every observed benign
+    score with margin, above all but the closest observed hijack score.
+    Not perfect separation (a single semantic-similarity check trained on
+    nothing task-specific has real limits here, worth noting honestly in
+    the paper), but a large improvement over 0.80. The 117 trials
+    collected under the stale 0.80 threshold were purged for the same
+    consistency reason as bug 9's original 216.
 10. **Overall ASR calculation diluted by benign trials.** `compute_asr()`
     with no `attack_class` filter pooled *all* trials sharing a
     `defense_profile`, benign included — since benign trials can never
