@@ -11,15 +11,20 @@ Last updated: 2026-09-18.
 
 ## 1. Status
 
-**228 valid trials collected** (of an eventual ~740). Breakdown:
+**235 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
-| benign | 68 | 0 (recollecting — see §4, bug 9) |
+| benign | 68 | 7 (recollecting — see §4, bug 9) |
 | indirect_injection | 80 (complete) | 0 (recollecting) |
 | goal_hijacking | 80 (complete) | 0 (recollecting) |
 | cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
 | tool_poisoning | 0 | 0 |
+
+**Bug 9 fix confirmed in the live pipeline (2026-09-19):** of the first 7
+layered-profile trials collected post-fix, `goal_verifier` fired on **0**
+of them (down from 100% pre-fix), and all 7 completed normally
+(`task_completed=True`). Safe to continue recollecting layered data.
 
 Run is gated by Groq's free-tier daily token quota (~100-120 trials/day
 achievable in practice); resumes automatically once per day via a
