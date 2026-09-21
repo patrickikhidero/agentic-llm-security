@@ -11,12 +11,12 @@ Last updated: 2026-09-20.
 
 ## 1. Status
 
-**260 valid trials collected** (of an eventual ~740). Breakdown:
+**296 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
 | benign | 68 (complete) | 32 (complete) |
-| indirect_injection | 80 (complete) | 0 (recollecting) |
+| indirect_injection | 80 (complete) | 36 (recollecting) |
 | goal_hijacking | 80 (complete) | 0 (recollecting) |
 | cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
 | tool_poisoning | 0 | 0 |
