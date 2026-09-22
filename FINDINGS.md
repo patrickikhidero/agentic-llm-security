@@ -11,13 +11,13 @@ Last updated: 2026-09-20.
 
 ## 1. Status
 
-**296 valid trials collected** (of an eventual ~740). Breakdown:
+**360 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
 | benign | 68 (complete) | 32 (complete) |
-| indirect_injection | 80 (complete) | 36 (recollecting) |
-| goal_hijacking | 80 (complete) | 0 (recollecting) |
+| indirect_injection | 80 (complete) | 80 (complete) |
+| goal_hijacking | 80 (complete) | 20 (recollecting) |
 | cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
 | tool_poisoning | 0 | 0 |
 
@@ -189,9 +189,7 @@ what was actually run:
 
 ## 5. Real results so far
 
-Only `indirect_injection` and `goal_hijacking` have complete, *valid*
-baseline-profile data (layered-profile data for both is being
-recollected post-bug-9-fix):
+Baseline ASR for both completed attack classes:
 
 | Attack class | ASR (undefended baseline) | n |
 |---|---|---|
@@ -204,6 +202,41 @@ presumably more safety tuning) resists these specific injection payloads
 better than GPT-4o did in the AgentDojo-era literature the placeholder
 numbers were extrapolated from. Worth discussing honestly in §5.3 rather
 than treated as a replication failure.
+
+### 5.0 First complete Table 1 row — and it contradicts the draft
+
+`indirect_injection` now has both profiles complete (n=80 each) under
+correct thresholds. The result is **materially different from the
+draft's projection** and should reshape the paper's argument:
+
+| Metric | Draft projection | **Measured** |
+|---|---|---|
+| ASR baseline | ~51.2% | **10.0%** (95% CI 5.2–18.5) |
+| ASR layered | ~7.8% | **7.5%** (95% CI 3.5–15.4) |
+| Reduction | ↓43.4pp | **↓2.5pp** |
+| TCR baseline → layered | 70.6% → 62.4% | **100% → 70.0%** |
+| Utility preservation | 0.88 | **0.70** |
+
+Two things stand out, both contrary to the draft's thesis:
+
+1. **The ASR reduction is not statistically significant.** The baseline
+   and layered confidence intervals overlap substantially (5.2–18.5 vs
+   3.5–15.4). On this evidence the layered stack cannot be claimed to
+   reduce indirect-injection success at all, let alone by 43 points.
+2. **The utility cost is severe and real.** Task completion falls from
+   100% to 70% — a 30-point drop, versus the ~8-12 points the draft
+   projected. Note this is *worse* than the benign-condition cost
+   (0.875, §1), i.e. the defenses misfire more when adversarial content
+   is present in retrieved documents, even when the attack itself
+   would have failed anyway.
+
+Combined: for this attack class the defense stack pays ~30 points of
+utility for a statistically insignificant security gain. That is a
+legitimate and publishable negative result, but the paper's §4.2/§5.2
+narrative ("substantial ASR reduction at modest utility cost") cannot
+survive it unedited. Hold final interpretation until the other three
+attack classes are in — goal_hijacking's higher 27.5% baseline may yet
+show a clearer defense benefit.
 
 **Do not yet trust any attack-class "layered" numbers in
 `data/results/summary.json`** — they predate the bug-9/9b fixes and will
