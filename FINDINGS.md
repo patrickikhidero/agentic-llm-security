@@ -5,19 +5,19 @@ original draft, bugs found and fixed, and real (non-placeholder) results as
 they come in. This is the evaluation log behind the paper, not the paper
 itself.
 
-Last updated: 2026-09-20.
+Last updated: 2026-09-21.
 
 ---
 
 ## 1. Status
 
-**360 valid trials collected** (of an eventual ~740). Breakdown:
+**367 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
 | benign | 68 (complete) | 32 (complete) |
 | indirect_injection | 80 (complete) | 80 (complete) |
-| goal_hijacking | 80 (complete) | 20 (recollecting) |
+| goal_hijacking | 80 (complete) | 27 (recollecting) |
 | cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
 | tool_poisoning | 0 | 0 |
 
