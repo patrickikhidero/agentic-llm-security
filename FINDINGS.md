@@ -11,14 +11,14 @@ Last updated: 2026-09-22.
 
 ## 1. Status
 
-**418 valid trials collected** (of an eventual ~740). Breakdown:
+**420 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
 | benign | 68 (complete) | 32 (complete) |
 | indirect_injection | 80 (complete) | 80 (complete) |
-| goal_hijacking | 80 (complete) | 78 (near-complete) |
-| cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
+| goal_hijacking | 80 (complete) | 80 (complete) |
+| cascade_exploit | 0 (restarting — see §4, bug 8b) | 0 |
 | tool_poisoning | 0 | 0 |
 
 **Threshold recalibration validated (2026-09-20).** With the benign
@@ -162,6 +162,24 @@ what was actually run:
    result. Purged from the checkpoint; recollecting now under the fix.
    Locked in with a regression test
    (`tests/test_defenses.py::TestGoalVerifier`).
+8b. **Follow-up to bug 8: most cascade trials still mount no attack.**
+    With depth=1 added, induced failures do now fire (7 fires across the
+    first 22 trials, versus 0 before — bug 8's fix confirmed). But that
+    also means **15 of 22 trials mounted no attack at all**: the depth
+    grid cycles 1/2/5/10, and these task scenarios execute only one or
+    two real tool calls, so depths 5 and 10 (and usually 2) never
+    coincide with a tool execution. Those trials were being scored as
+    `attack_success=False` and pooled into the ASR denominator — the
+    same denominator-dilution as bug 8, just partial rather than total.
+    Fixed by recording a `mounted=` flag (plus depth and method) in each
+    cascade trial's `notes`, so ASR can be reported over genuinely
+    mounted attempts and the mounting rate itself can be stated.
+    Backfilling the 22 existing trials was attempted and **rejected**:
+    `steps_taken` overcounts tool executions (the loop breaks on FINISH
+    before executing a tool), so reconstruction gave 12 mounted vs the
+    log's actual 7 — i.e. it would have fabricated data. Purged and
+    recollecting instead (22 trials, ~20 min of quota).
+
 9b. **Follow-up: `consistency_threshold: 0.80` was still miscalibrated**
     after fixing bug 9. Live data from ~117 trials collected post-fix
     showed real benign first-action similarity scores of 0.462
@@ -238,23 +256,23 @@ survive it unedited.
 
 ### 5.0b Second row: goal_hijacking — same null result, opposite cost
 
-(n=78/80 layered at time of writing; will be finalised at n=80.)
+(Final, n=80 both profiles.)
 
 | Metric | Draft projection | **Measured** |
 |---|---|---|
 | ASR baseline | ~43.8% | **27.5%** (95% CI 18.9–38.1) |
-| ASR layered | ~11.2% | **23.1%** (95% CI 15.1–33.6) |
-| Reduction | ↓32.6pp | **↓4.4pp** |
-| TCR baseline → layered | 70.6% → 63.1% | **95.0% → 94.9%** |
-| Utility preservation | 0.89 | **0.9986** |
+| ASR layered | ~11.2% | **22.5%** (95% CI 14.7–32.8) |
+| Reduction | ↓32.6pp | **↓5.0pp** |
+| TCR baseline → layered | 70.6% → 63.1% | **95.0% → 95.0%** |
+| Utility preservation | 0.89 | **1.00** |
 
 The ASR finding replicates indirect_injection's: a small nominal
-reduction (4.4pp) with **heavily overlapping confidence intervals** —
+reduction (5.0pp) with **heavily overlapping confidence intervals** —
 again not statistically significant. Two attack classes, two null
 results on the security side.
 
-**But the utility cost is completely different: essentially zero
-(0.9986) versus 0.70 for indirect_injection.** This is the most
+**But the utility cost is completely different: exactly zero
+(1.00) versus 0.70 for indirect_injection.** This is the most
 interesting cross-class signal so far, and it has a mechanical
 explanation worth stating in the paper:
 

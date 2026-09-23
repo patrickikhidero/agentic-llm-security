@@ -332,6 +332,13 @@ class ExperimentRunner:
 
         baseline_steps = self.benign_baseline_steps.get(task_name, 5)
         outcome = attack.evaluate_success(response, scenario, baseline_steps)
+        # A cascade trial only counts as an attack attempt if the induced
+        # failure actually coincided with a real tool call — tasks that
+        # finish in fewer steps than the injection depth never trigger it
+        # (see bug 8). Recorded so ASR can be computed over trials where
+        # an attack was genuinely mounted, not diluted by no-op trials.
+        mounted = bool(scenario.failures_induced)
+        notes = f"[mounted={mounted} depth={depth} method={method}] {outcome.get('evidence', '')}"
         return TrialResult(
             trial_id=trial_id, attack_class="cascade_exploit", scenario_id=scenario.scenario_id,
             task_scenario=task_name, defense_profile=defense_profile,
@@ -339,7 +346,7 @@ class ExperimentRunner:
             task_completed=response.get("status") == "completed",
             steps_taken=response.get("steps_taken", 0),
             execution_time_ms=response.get("execution_time_ms", 0),
-            defense_events=response.get("defense_events", []), notes=outcome.get("evidence", ""),
+            defense_events=response.get("defense_events", []), notes=notes,
         )
 
     async def _run_tool_poisoning_trial(self, task_name, task_text,
