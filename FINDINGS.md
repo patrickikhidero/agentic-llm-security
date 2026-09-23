@@ -5,19 +5,19 @@ original draft, bugs found and fixed, and real (non-placeholder) results as
 they come in. This is the evaluation log behind the paper, not the paper
 itself.
 
-Last updated: 2026-09-21.
+Last updated: 2026-09-22.
 
 ---
 
 ## 1. Status
 
-**367 valid trials collected** (of an eventual ~740). Breakdown:
+**418 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
 | benign | 68 (complete) | 32 (complete) |
 | indirect_injection | 80 (complete) | 80 (complete) |
-| goal_hijacking | 80 (complete) | 27 (recollecting) |
+| goal_hijacking | 80 (complete) | 78 (near-complete) |
 | cascade_exploit | 0 (recollecting — see §4, bug 8) | 0 |
 | tool_poisoning | 0 | 0 |
 
@@ -234,9 +234,44 @@ Combined: for this attack class the defense stack pays ~30 points of
 utility for a statistically insignificant security gain. That is a
 legitimate and publishable negative result, but the paper's §4.2/§5.2
 narrative ("substantial ASR reduction at modest utility cost") cannot
-survive it unedited. Hold final interpretation until the other three
-attack classes are in — goal_hijacking's higher 27.5% baseline may yet
-show a clearer defense benefit.
+survive it unedited.
+
+### 5.0b Second row: goal_hijacking — same null result, opposite cost
+
+(n=78/80 layered at time of writing; will be finalised at n=80.)
+
+| Metric | Draft projection | **Measured** |
+|---|---|---|
+| ASR baseline | ~43.8% | **27.5%** (95% CI 18.9–38.1) |
+| ASR layered | ~11.2% | **23.1%** (95% CI 15.1–33.6) |
+| Reduction | ↓32.6pp | **↓4.4pp** |
+| TCR baseline → layered | 70.6% → 63.1% | **95.0% → 94.9%** |
+| Utility preservation | 0.89 | **0.9986** |
+
+The ASR finding replicates indirect_injection's: a small nominal
+reduction (4.4pp) with **heavily overlapping confidence intervals** —
+again not statistically significant. Two attack classes, two null
+results on the security side.
+
+**But the utility cost is completely different: essentially zero
+(0.9986) versus 0.70 for indirect_injection.** This is the most
+interesting cross-class signal so far, and it has a mechanical
+explanation worth stating in the paper:
+
+- `indirect_injection` poisons *documents in the retrieval corpus*.
+  When the input screener blocks that content, it also destroys the
+  retrieval result the agent legitimately needed — so the task fails.
+  The defense's cost is inseparable from its function.
+- `goal_hijacking` poisons a *tool response mid-execution*. Blocking or
+  flagging that content removes the injected instruction without
+  removing anything the agent needed, so the task proceeds normally.
+
+So the utility cost of content-screening defenses is **not a property
+of the defense stack**; it is a property of how tightly the attack
+vector is coupled to content the agent actually depends on. A paper
+claiming a single headline "utility preservation" figure (as the draft
+does, 0.88-0.91 across all classes) is averaging over a 0.70-1.00
+spread and obscuring the real finding.
 
 **Do not yet trust any attack-class "layered" numbers in
 `data/results/summary.json`** — they predate the bug-9/9b fixes and will
