@@ -374,21 +374,50 @@ compositional goals.** Deliberately *not* tuning further — moving the
 threshold to 0.38 would zero out the FPR while overfitting to this
 benign sample and forcing a third full recollection.
 
+### 5.2 Latency: end-to-end is unmeasurable here; per-layer is not
+
+**The paper's §4.5 cannot be filled from trial timings.** Recorded
+`execution_time_ms` is dominated by the token-bucket rate limiter's
+sleeps, not by defense work — observed spread 640ms to 604,326ms with a
+median near 30s, and `layered` is sometimes *faster* than `baseline`
+purely by where trials landed in the quota cycle. Any "defense overhead"
+computed from these numbers would be an artifact of free-tier
+throttling.
+
+Every defense layer runs locally, though, so each was benchmarked
+directly (`scripts/bench_defense_latency.py`, n=200 per layer, local
+CPU):
+
+| Layer | Mean | Median | p95 |
+|---|---|---|---|
+| input_screener (pattern only) | 0.024ms | 0.023ms | 0.036ms |
+| input_screener (pattern+classifier) | 33.4ms | 29.0ms | 72.9ms |
+| goal_verifier (local embedding) | 13.7ms | 12.7ms | 20.2ms |
+| output_validator | 0.060ms | 0.066ms | 0.069ms |
+| hitl_gate (policy check) | 0.001ms | 0.001ms | 0.001ms |
+
+Per agent step the stack costs roughly **47ms** (one screener call on
+tool output + one goal-verifier call), so a typical 2-step task carries
+~95ms of defense work. The draft projected 340ms total with 190ms
+attributed to the goal verifier's *remote* embedding API call — the
+difference is architectural, not a contradiction: running the embedding
+model locally removes that network round-trip entirely, which is itself
+worth stating as a deployment recommendation.
+
+Report these per-layer figures and state plainly that end-to-end
+latency was not measurable under free-tier rate limiting.
+
 ---
 
 ## 6. Open items before the final paper write-up
 
-- [ ] Finish remaining trials: `cascade_exploit` (both profiles, from
-      scratch under corrected depths), `tool_poisoning` (both profiles,
-      not started), `indirect_injection`/`goal_hijacking`/`benign` layered
-      profile (recollecting post-fix).
-- [ ] Once benign-layered data exists again, re-check FPR for all four
-      defense layers (`MetricsCalculator.compute_fpr`) — confirm
-      goal_verifier's FPR has actually dropped from 100% to something
-      reasonable, not just "no longer literally everything."
-- [ ] Confirm `cascade_exploit` failures are actually firing this time
-      (`grep -c "Cascade failure injected" data/results/run.log` should be
-      > 0 once those trials run).
-- [ ] Recompute and sanity-check the full Table 1 (ASR baseline/layered,
-      reduction, TCR, utility ratio) once all four attack classes have
-      both profiles complete.
+- [ ] Finish remaining trials: `cascade_exploit` layered, `tool_poisoning`
+      (both profiles, not started).
+- [x] Re-check FPR for all defense layers once benign-layered data
+      existed again — done, see §1 (goal_verifier 100% → 75% → 12.5%).
+- [x] Confirm `cascade_exploit` failures actually fire — done, see §5.0c
+      (7 fires vs 0; but only 31% of trials mount at all, bug 8b).
+- [ ] Recompute and sanity-check the full Table 1 once all four attack
+      classes have both profiles complete.
+- [x] Measure defense latency — done, see §5.2 (per-layer benchmark;
+      end-to-end unmeasurable under rate limiting).
