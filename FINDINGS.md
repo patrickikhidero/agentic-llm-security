@@ -11,14 +11,14 @@ Last updated: 2026-09-23.
 
 ## 1. Status
 
-**494 valid trials collected** (of an eventual ~740). Breakdown:
+**503 valid trials collected** (of an eventual ~740). Breakdown:
 
 | Attack class | Baseline | Layered |
 |---|---|---|
 | benign | 68 (complete) | 32 (complete) |
 | indirect_injection | 80 (complete) | 80 (complete) |
 | goal_hijacking | 80 (complete) | 80 (complete) |
-| cascade_exploit | 74 (near-complete) | 0 |
+| cascade_exploit | 80 (complete) | 3 (in progress) |
 | tool_poisoning | 0 | 0 |
 
 **Threshold recalibration validated (2026-09-20).** With the benign
@@ -293,7 +293,7 @@ spread and obscuring the real finding.
 
 ### 5.0c Third row: cascade_exploit fails outright — and mostly can't be mounted
 
-(Baseline profile, n=74/80 at time of writing; layered not yet started.)
+(Baseline profile, n=80 final; layered in progress.)
 
 **Attack success rate: 0.0%.** Zero successes in 74 trials, and zero in
 the 23 trials where the induced failure actually fired (95% CI 0–16.8%
