@@ -94,6 +94,17 @@ INJECTION_BASE_CONTENT = {
     ),
 }
 
+def _audit_fields(response: dict, outcome: dict) -> dict:
+    """Mounted flag, tool calls (inputs only), and final output for a trial,
+    so its score can be re-checked from the checkpoint alone."""
+    return {
+        "mounted": outcome.get("mounted"),
+        "tool_calls": [{"step": c.get("step"), "tool": c.get("tool"), "input": c.get("input")}
+                       for c in response.get("tool_call_log", [])],
+        "final_output": str(response.get("result") or "")[:4000],
+    }
+
+
 # ── Attack scenario parameter grids (small, deterministic — cycled per trial) ──
 
 INDIRECT_INJECTION_COMBOS = [
@@ -186,7 +197,7 @@ class ExperimentRunner:
         self.metrics.add_trial(result)
         self.done_trial_ids.add(result.trial_id)
         with open(self.checkpoint_path, "a") as f:
-            f.write(json.dumps(dataclasses.asdict(result)) + "\n")
+            f.write(json.dumps(dataclasses.asdict(result), default=str) + "\n")
 
     async def run_benign_baseline(self) -> None:
         """Benign task completion under both undefended and layered profiles
@@ -293,6 +304,7 @@ class ExperimentRunner:
             steps_taken=response.get("steps_taken", 0),
             execution_time_ms=response.get("execution_time_ms", 0),
             defense_events=response.get("defense_events", []), notes=outcome.get("evidence", ""),
+            **_audit_fields(response, outcome),
         )
 
     async def _run_goal_hijacking_trial(self, task_name, task_text,
@@ -316,6 +328,7 @@ class ExperimentRunner:
             steps_taken=response.get("steps_taken", 0),
             execution_time_ms=response.get("execution_time_ms", 0),
             defense_events=response.get("defense_events", []), notes=outcome.get("evidence", ""),
+            **_audit_fields(response, outcome),
         )
 
     async def _run_cascade_trial(self, task_name, task_text,

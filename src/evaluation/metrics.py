@@ -34,6 +34,11 @@ class TrialResult:
     execution_time_ms: float
     defense_events:    list[dict] = field(default_factory=list)
     notes:             str = ""
+    # Persisted so scoring can be audited without re-parsing run.log
+    # (FINDINGS bugs 11/12); empty on trials recorded before 2026-09-27.
+    mounted:           bool | None = None
+    tool_calls:        list[dict] = field(default_factory=list)
+    final_output:      str = ""
 
 
 class MetricsCalculator:
