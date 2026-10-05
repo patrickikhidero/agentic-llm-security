@@ -181,10 +181,10 @@ MIT License — see [`LICENSE`](LICENSE)
 
 ## Citation
 
-If you use this code in your research, please cite:
+If you use this code in your research, please cite the paper it accompanies and, where relevant, the prior work:
 
 ```bibtex
-@misc{ikhidero2026agentic,
+@misc{ikhidero2026empirical,
   author    = {Ikhidero, Patrick O.},
   title     = {An Empirical Evaluation of Attack and Defense Dynamics
                in Enterprise Agentic {LLM} Pipelines},
