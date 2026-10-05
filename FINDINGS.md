@@ -618,6 +618,8 @@ The CIs are Wilson intervals and the p-values Fisher exact, as before.
    building the paper's "utility depends on attack-vector coupling"
    argument on it, report both collections, or pool them and state the
    variance. As it stands, the 0.70 figure doesn't reproduce.
+   **Decided 2026-10-04: pool, and report per-collection values too.**
+   See §5.5.
 2. **Halts in attack trials include false-positive-style halts.**
    - Indirect: all 12 layered halts are `goal_verifier`, and 6 are on
      document_classification. Three of those (and 1 on code_review) sit at
@@ -651,6 +653,52 @@ The CIs are Wilson intervals and the p-values Fisher exact, as before.
 
    Neither is worth recollecting for. Mention both if output-corruption
    results are reported at all.
+
+### 5.5 Decision: how utility is reported for the injection classes (2026-10-04)
+
+**Pool both collections as the headline utility for indirect_injection
+and goal_hijacking (n = 160 per cell), and report each collection's value
+alongside.** Pooling is legitimate here. Both collections ran after the
+last defense or config change (goal_verifier recalibration, `722cca5`,
+2026-09-19), and the scorer fix (`2be9628`) changed only success
+scoring, not `task_completed`. They're repeated measurements of the same
+system. Pool both classes the same way: pooling only indirect_injection
+would read as cherry-picking.
+
+Utility is layered TCR ÷ baseline TCR. The CI is a 95% log-scale (Katz)
+interval on that ratio.
+
+| Class | First collection | Second collection | Pooled |
+|---|---|---|---|
+| indirect_injection | 0.70 (0.61–0.81) | 0.86 (0.78–0.95) | **0.78 (0.71–0.85)** |
+| goal_hijacking | 1.00 (0.93–1.07) | 0.96 (0.88–1.05) | **0.98 (0.93–1.04)** |
+
+Pooled TCR: indirect_injection 158/160 baseline, 123/160 layered;
+goal_hijacking 152/160 baseline, 149/160 layered. Between collections,
+layered TCR differs at p = 0.06 for indirect_injection and p = 0.53 for
+goal_hijacking. Indirect vs goal_hijacking layered TCR: p = 4×10⁻⁵ in the
+first collection, p = 0.23 in the second, **p = 6.5×10⁻⁵ pooled** (all
+Fisher exact).
+
+What the paper can and can't claim:
+
+- **Claim:** content screening costs much more utility on
+  indirect_injection than on goal_hijacking, 0.78 vs 0.98 pooled. The gap
+  is significant, and its direction holds in both collections.
+- **Don't claim** "0.70 vs 1.00". The second collection alone doesn't
+  show a significant gap.
+- **Report the run-to-run swing as a finding.** Most indirect layered
+  halts are goal_verifier calls just under the 0.40 threshold (§5.4
+  issue 2), so a threshold-based verifier's utility cost is unstable near
+  its threshold, which matters for deployment.
+- **Present attack-vector coupling as a hypothesis.** It fits the data,
+  but nothing here tests it directly.
+
+In the paper, the Table 1 note must say the utility cells for these two
+classes are pooled (n = 160), while their ASR cells come only from the
+scorer-fixed collection (n = 80). Per-collection values go in a footnote
+or the supplement. A third collection (about two quota-days) would allow
+a proper variance estimate. The pooled result doesn't need it.
 
 ### 5.1 The residual false positives are a finding, not just noise
 
@@ -722,8 +770,9 @@ latency was not measurable under free-tier rate limiting.
 - [x] Finish the recollection under the fixed scorers. Done 2026-10-02,
       740/740. goal_hijacking is significant: p = 0.028 all trials,
       0.024 mounted only (§5.4).
-- [ ] Settle how indirect_injection utility is reported: 0.70 in the
-      first collection, 0.86 in the second (§5.4 issue 1).
+- [x] Settle how indirect_injection utility is reported: 0.70 in the
+      first collection, 0.86 in the second (§5.4 issue 1). Decided
+      2026-10-04: pool both collections, n = 160 per cell (§5.5).
 - [x] **Decide on bugs 11/12 before the paper pass.** Decided: (b), see
       commit `2be9628` and §5.4. Options: (a)
       report the §5.3 log-inferred correction as-is, with its caveat; or
