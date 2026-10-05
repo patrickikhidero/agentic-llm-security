@@ -7,8 +7,8 @@ for the same embedded ChromaDB file) and records real, measured results.
 
 Usage:
   python -m src.evaluation.runner --mode full_eval --config configs/attack_config.yaml
-  python -m src.evaluation.runner --mode benign --task workspace_summary
-  python -m src.evaluation.runner --mode attack --attack indirect_injection
+  python -m src.evaluation.runner --mode benign
+  python -m src.evaluation.runner --mode attack --attack indirect_injection --defense layered
 """
 
 import argparse

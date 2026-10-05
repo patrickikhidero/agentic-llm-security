@@ -20,10 +20,17 @@ agentic LLM pipelines against a purpose-built multi-step enterprise agentic syst
 | Cascade Exploitation | `src/attacks/cascade_exploit.py` |
 | Tool Description Poisoning | `src/attacks/tool_poisoning.py` |
 
-Each attack is mounted against a FastAPI-based agentic pipeline with three real tool integrations:
-- **Retrieval Tool** — ChromaDB-backed RAG over an enterprise document corpus
-- **Code Execution Tool** — sandboxed Python subprocess executor
-- **External API Tool** — REST endpoint caller (mocked and live variants)
+Each attack is mounted against a multi-step agentic pipeline with three real tool integrations:
+- **Retrieval Tool** — embedded ChromaDB RAG over an enterprise document corpus
+- **Code Execution Tool** — RestrictedPython sandbox
+- **External API Tool** — REST caller with a per-profile domain allowlist, exercised against a local mock HR API
+
+The planning model is `openai/gpt-oss-20b`, an open-weight (Apache 2.0) model, called through
+Groq's OpenAI-compatible API. Each trial runs under one of two defense profiles: `baseline`
+(undefended) or `layered` (input screener, goal verifier, output validator and HITL gate).
+
+Results, methodology changes and every bug found during the evaluation are logged in
+[`FINDINGS.md`](FINDINGS.md).
 
 ---
 
@@ -33,49 +40,52 @@ Each attack is mounted against a FastAPI-based agentic pipeline with three real 
 agentic-llm-security/
 ├── src/
 │   ├── agent/                  # Core agentic pipeline
-│   │   ├── orchestrator.py     # Main agent loop (FastAPI)
-│   │   ├── planner.py          # LLM planning module
+│   │   ├── orchestrator.py     # Agent loop and defense hooks (plus a FastAPI wrapper for manual use)
+│   │   ├── planner.py          # LLM planning module (native function calling)
 │   │   ├── context_manager.py  # Context window management
 │   │   └── memory.py           # Session memory
+│   ├── common/
+│   │   ├── llm_client.py       # Groq client with rate limiting and retries
+│   │   └── embeddings.py       # Local sentence-transformers embeddings
 │   ├── tools/                  # Tool integrations
 │   │   ├── retrieval_tool.py   # ChromaDB RAG tool
 │   │   ├── code_exec_tool.py   # Sandboxed code execution
-│   │   └── api_call_tool.py    # External REST API tool
-│   ├── attacks/                # Attack scenario implementations
+│   │   ├── api_call_tool.py    # External REST API tool
+│   │   └── mock_hr_api.py      # Local mock HR API (127.0.0.1:8090)
+│   ├── attacks/                # Attack scenario implementations and scoring
 │   │   ├── indirect_injection.py
 │   │   ├── goal_hijacking.py
 │   │   ├── cascade_exploit.py
-│   │   └── tool_poisoning.py
+│   │   ├── tool_poisoning.py
+│   │   └── scoring.py
 │   ├── defenses/               # Defensive layer implementations
-│   │   ├── input_screener.py   # Classifier-based input screening
+│   │   ├── input_screener.py   # Injection-pattern and similarity screening
 │   │   ├── goal_verifier.py    # Goal-consistency verification
-│   │   ├── output_validator.py # Output schema validation
+│   │   ├── output_validator.py # Output policy validation
 │   │   └── hitl_gate.py        # Human-in-the-loop confirmation gate
 │   └── evaluation/             # Metrics and evaluation harness
-│       ├── metrics.py          # ASR, utility, latency calculations
-│       ├── runner.py           # Experiment runner
+│       ├── metrics.py          # ASR, utility, FPR calculations
+│       ├── runner.py           # Experiment runner (checkpoints and resumes)
 │       └── reporter.py         # Results export to CSV/JSON
-├── tests/                      # Unit and integration tests
-│   ├── test_agent.py
-│   ├── test_tools.py
+├── scripts/
+│   ├── seed_corpus.py          # Index the benign corpus into ChromaDB
+│   ├── resume_run.sh           # Resume a full evaluation from its checkpoint
+│   ├── bench_defense_latency.py  # Per-layer defense latency benchmark
+│   └── audit_scoring.py        # Scoring audit for bugs 11/12 (see FINDINGS.md)
+├── tests/
 │   ├── test_attacks.py
 │   └── test_defenses.py
 ├── data/
-│   ├── corpus/                 # Benign enterprise document corpus
-│   ├── poisoned/               # Adversarially crafted injection documents
-│   └── results/                # Experiment output data
-├── notebooks/
-│   ├── 01_pipeline_demo.ipynb
-│   ├── 02_attack_evaluation.ipynb
-│   └── 03_results_analysis.ipynb
+│   ├── corpus/documents.yaml   # Benign enterprise document corpus
+│   └── results/                # Experiment output (gitignored)
 ├── docs/
 │   ├── experimental_design.md
-│   ├── attack_scenarios.md
-│   └── defense_architecture.md
+│   └── attack_scenarios.md
 ├── configs/
 │   ├── pipeline_config.yaml
 │   ├── attack_config.yaml
 │   └── defense_config.yaml
+├── FINDINGS.md                 # Evaluation log: results, decisions, bugs
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
@@ -101,26 +111,39 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env and add your LLM API keys
+# Edit .env and add your Groq API key (free at https://console.groq.com)
 ```
 
-### 3. Run the pipeline
+### 3. Index the corpus
 
 ```bash
-# Start the agentic pipeline server
-uvicorn src.agent.orchestrator:app --reload --port 8000
-
-# In a separate terminal, run a benign task
-python -m src.evaluation.runner --mode benign --task workspace_summary
-
-# Run an attack scenario
-python -m src.evaluation.runner --mode attack --attack indirect_injection --task workspace_summary
+python -m scripts.seed_corpus
 ```
 
-### 4. Run full evaluation
+The runner starts the mock HR API itself and calls the pipeline in-process, so no server
+needs to be running.
+
+### 4. Run trials
 
 ```bash
+# Benign tasks only, under both defense profiles
+python -m src.evaluation.runner --mode benign
+
+# One attack class, under one defense profile
+python -m src.evaluation.runner --mode attack --attack indirect_injection --defense layered
+
+# The full evaluation: every class, both profiles
 python -m src.evaluation.runner --mode full_eval --config configs/attack_config.yaml
+```
+
+The full evaluation is 704 trials. On Groq's free tier the daily token quota allows roughly
+100–120 trials a day. When the quota runs out the runner checkpoints and exits; rerun the same
+command, or `scripts/resume_run.sh`, to continue where it stopped.
+
+### 5. Run the tests
+
+```bash
+python -m pytest
 ```
 
 Results will be saved to `data/results/`.
@@ -142,10 +165,10 @@ including:
 
 | Metric | Description |
 |---|---|
-| **ASR** | Attack Success Rate — % of attack attempts achieving attacker goal |
-| **TCR** | Task Completion Rate — % of benign tasks completed correctly |
-| **TCR-D** | Task Completion Rate under Defense — utility preservation measure |
-| **Latency** | Mean response time per defense layer (ms) |
+| **ASR** | Attack Success Rate — % of trials in which the agent attempted the attacker-directed action |
+| **TCR** | Task Completion Rate — % of tasks completed |
+| **Utility preservation** | TCR under `layered` ÷ TCR under `baseline` |
+| **Latency** | Mean per-call time of each defense layer (ms), benchmarked in isolation |
 | **FPR** | False Positive Rate of input/output classifiers |
 
 ---
@@ -162,7 +185,7 @@ If you use this code in your research, please cite:
 
 ```bibtex
 @misc{ikhidero2026agentic,
-  author    = {Ikhidero, Prosper O.},
+  author    = {Ikhidero, Patrick O.},
   title     = {An Empirical Evaluation of Attack and Defense Dynamics
                in Enterprise Agentic {LLM} Pipelines},
   year      = {2026},
@@ -171,7 +194,7 @@ If you use this code in your research, please cite:
 }
 
 @misc{ikhidero2026llm,
-  author    = {Ikhidero, Prosper O.},
+  author    = {Ikhidero, Patrick O.},
   title     = {{LLM} Integration Security in Enterprise Backend Systems:
                A Systematic Review of Emerging Attack Surfaces
                in Production {API} Environments},

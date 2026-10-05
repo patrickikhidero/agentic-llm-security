@@ -4,7 +4,7 @@ llm_client.py
 Thin, provider-agnostic chat-completion client.
 
 The experimental pipeline uses Groq's OpenAI-compatible endpoint to run
-open-weight Llama models (free tier, no vendor lock-in) instead of a
+open-weight models (free tier, no vendor lock-in; currently gpt-oss-20b) instead of a
 proprietary hosted model. Groq's API is wire-compatible with the OpenAI
 client, so the same `openai` SDK is reused with a different base_url.
 

@@ -3,15 +3,19 @@
 # session-scoped scheduled task; a no-op once every trial is checkpointed.
 # `resume_run.sh --check` only prints the checkpoint count.
 
+# Repo root: the parent of this script's directory, wherever it is cloned.
 REPO="${0:A:h:h}"
-# Checkpoint lines when complete: 704 configured slots plus 36 benign-baseline
-# trials left over from the earlier 20-per-scenario benign config (which the
-# runner's "N/704 trials done" message counts as done).
-TOTAL=740
+# Checkpoint lines when complete: the 704 trial slots configured in
+# configs/attack_config.yaml. The published dataset holds 740 (36 extra
+# benign-baseline trials from an earlier config), which also counts as done.
+# Override with RESUME_TOTAL if you change the trial counts.
+TOTAL=${RESUME_TOTAL:-704}
 
 cd "$REPO" || { echo "$(date '+%F %T') cannot cd to $REPO"; exit 1; }
 
-done_count=$(wc -l < data/results/trials_checkpoint.jsonl | tr -d ' ')
+ckpt=data/results/trials_checkpoint.jsonl
+done_count=0
+[[ -f "$ckpt" ]] && done_count=$(wc -l < "$ckpt" | tr -d ' ')
 echo "$(date '+%F %T') resume_run: ${done_count}/${TOTAL} trials checkpointed"
 
 if [[ "$1" == "--check" ]]; then
