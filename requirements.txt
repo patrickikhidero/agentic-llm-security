@@ -15,6 +15,7 @@ sentence-transformers==3.3.1
 pandas==2.2.3
 numpy==1.26.4   # pinned <2 — torch has no numpy-2-compatible wheel for Intel macOS
 scikit-learn==1.5.2
+scipy==1.17.1   # scripts/paper_stats.py (Fisher exact tests)
 matplotlib==3.9.3
 seaborn==0.13.2
 

@@ -653,7 +653,11 @@ The CIs are Wilson intervals and the p-values Fisher exact, as before.
      False`). It's a pure false positive inside an attack row. Three
      more halts score 0.397–0.399.
    - The input screener fired 98 times on indirect tool output and 17 times
-     on goal_hijacking, but halted nothing. Its flags are logged only.
+     on goal_hijacking, but halted nothing. It doesn't only log, though:
+     with `block_on_detection` on, the orchestrator replaces flagged tool
+     output with "[CONTENT BLOCKED: injection pattern detected]" before the
+     agent sees it (corrected 2026-10-05). That redaction, plus the
+     layered domain allowlist, is how payloads were stopped without halts.
 
    None of this changes ASR, but it adds to the utility cost, so describe
    these halts as verifier misfires, not as the stack catching attacks.
