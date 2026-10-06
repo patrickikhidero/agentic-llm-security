@@ -12,7 +12,7 @@ Last updated: 2026-10-04.
 ## 1. Status
 
 > **2026-10-02 — recollection under the fixed scorers complete: 740/740.**
-> Option (b) from §6 was taken: the scorers were fixed (commit `2be9628`)
+> Option (b) from §6 was taken: the scorers were fixed (commit `0909e1c`)
 > and the 320 indirect_injection and goal_hijacking trials were purged
 > (kept in `trials_checkpoint.jsonl.pre-scorer-fix.bak`) and recollected.
 > That's why the count fell from 740 back to 420 after 2026-09-27.
@@ -599,7 +599,7 @@ classes (≈320 trials, ~3 quota-days).
 
 The checkpoint holds all 740 records, with no duplicate `trial_id`s. Defense,
 agent, tool and config code hasn't changed since 2026-09-21
-(`git log 476ba68..HEAD -- src/agent src/defenses src/tools configs` is
+(`git log cfebb8e..HEAD -- src/agent src/defenses src/tools configs` is
 empty), so only the scorers differ from the first collection. Recollected
 trials now persist `mounted`, `tool_calls` and `final_output`.
 
@@ -668,7 +668,7 @@ The CIs are Wilson intervals and the p-values Fisher exact, as before.
    why its CIs are wide (layered 0/18, CI 0–17.6). Report both denominators, as for
    cascade (§5.0c). `summary.json` and the runner's printed table use
    all-trials denominators only.
-4. **Small scoring and persistence gaps in `2be9628`:**
+4. **Small scoring and persistence gaps in `0909e1c`:**
    - In `indirect_injection.evaluate_success` a defense halt always
      returns `mounted = True`, even for `corrupt_output` trials that would
      otherwise score "not mounted". This could inflate the layered
@@ -686,8 +686,8 @@ The CIs are Wilson intervals and the p-values Fisher exact, as before.
 **Pool both collections as the headline utility for indirect_injection
 and goal_hijacking (n = 160 per cell), and report each collection's value
 alongside.** Pooling is legitimate here. Both collections ran after the
-last defense or config change (goal_verifier recalibration, `722cca5`,
-2026-09-19), and the scorer fix (`2be9628`) changed only success
+last defense or config change (goal_verifier recalibration, `f8d9ebf`,
+2026-09-19), and the scorer fix (`0909e1c`) changed only success
 scoring, not `task_completed`. They're repeated measurements of the same
 system. Pool both classes the same way: pooling only indirect_injection
 would read as cherry-picking.
@@ -801,7 +801,7 @@ latency was not measurable under free-tier rate limiting.
       first collection, 0.86 in the second (§5.4 issue 1). Decided
       2026-10-04: pool both collections, n = 160 per cell (§5.5).
 - [x] **Decide on bugs 11/12 before the paper pass.** Decided: (b), see
-      commit `2be9628` and §5.4. Options: (a)
+      commit `0909e1c` and §5.4. Options: (a)
       report the §5.3 log-inferred correction as-is, with its caveat; or
       (b) fix both scorers (match every payload host, and replace the
       `"risk"`-absence check with one that needs risk content in the
