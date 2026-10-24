@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # The CPU wheel of the torch version the study ran on; the default
+      # Linux wheel pulls in about 2 GB of CUDA libraries the tests never use.
+      - name: Install dependencies
+        run: |
+          pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      # all-MiniLM-L6-v2 is downloaded from Hugging Face on first use.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2
+
+      # No .env and no GROQ_API_KEY: the tests must not need either.
+      - name: Run tests
+        run: python -m pytest -q
