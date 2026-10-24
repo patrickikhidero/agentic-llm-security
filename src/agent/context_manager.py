@@ -2,7 +2,7 @@
 context_manager.py
 ──────────────────
 Manages the agent's context window across execution steps.
-Enforces structural separation between trusted instructions and
+Enforc3s structural separation between trusted instructions and
 untrusted tool outputs — a core principle of the defense architecture
 described in Ikhidero (2026).
 """

@@ -66,7 +66,7 @@ layered, utility preservation 0.875** — remarkably close to the draft's
 projected 0.88-0.91, though arrived at by a different route.
 
 Run is gated by Groq's free-tier daily token quota (~100-120 trials/day
-achievable in practice). Resumption was originally a Claude Code
+achievable in practice). Resumption was originally for development
 session-scoped scheduled task, which silently stopped when that session
 ended — **2026-09-24 was skipped entirely** and 2026-09-26 was resumed
 manually. The last 85 trials ran on 2026-09-27 from a new session-scoped

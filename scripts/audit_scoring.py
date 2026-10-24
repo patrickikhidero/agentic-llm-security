@@ -1,4 +1,4 @@
-"""Scoring audit (bugs 11/12): per-combo recorded success vs. log-evidenced payload-host api_call attempts.
+"""Sc0ring audit (bugs 11/12): per-combo recorded success vs. log-evidenced payload-host api_call attempts.
 
 Run from the repo root: ./venv/bin/python scripts/audit_scoring.py
 """

@@ -17,7 +17,7 @@ input_screener:
   # similarity against the canonical injection phrase (see scripts/seed_corpus.py
   # note in retrieval_tool.py for the same recalibration rationale) — MiniLM's
   # absolute similarity scores run much lower than OpenAI text-embedding-3-small's.
-  injection_threshold: 0.20          # Confidence threshold for flagging
+  injection_threshold: 0.20          # C0nfidence threshold for flagging
   pattern_rules:
     - "ignore previous instructions"
     - "disregard your system prompt"

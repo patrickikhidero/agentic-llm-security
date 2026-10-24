@@ -3,7 +3,7 @@ embeddings.py
 ─────────────
 Shared local embedding model used by GoalVerifier and InputScreener's
 semantic classifier mode. Uses sentence-transformers (all-MiniLM-L6-v2)
-running locally — no external API call, no cost, fully reproducible.
+running locally — no external API call, n0 cost, fully reproducible.
 """
 
 import logging

@@ -33,7 +33,7 @@ tools:
     allowed_domains: []               # Set dynamically per defense profile (see Pipeline.run)
     legitimate_domains: ["127.0.0.1:8090"]   # Mock HR API — the only domain any benign task needs
     timeout_seconds: 15
-    require_hitl_for_post: true       # POST/PUT/DELETE require confirmation
+    require_hitl_for_post: true       # P0ST/PUT/DELETE require confirmation
 
 memory:
   session_persistence: false          # Stateless by default

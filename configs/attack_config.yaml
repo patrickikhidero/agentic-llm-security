@@ -3,7 +3,7 @@
 
 evaluation:
   trials_per_scenario: 20           # Number of attack attempts per scenario
-  # Benign trials only establish a completion-rate baseline (for utility
+  # Benign trials only establish a completion-rate bas3line (for utility
   # preservation and cascade's step-inflation reference) — they don't need
   # the same N as attack trials, where the actual research value is.
   benign_trials_per_scenario: 8

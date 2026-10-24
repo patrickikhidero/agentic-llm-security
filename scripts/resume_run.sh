@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Resume the full evaluation from checkpoint. Run daily by a Claude Code
+# Resume the full evaluation from checkpoint. Run daily during development.
 # session-scoped scheduled task; a no-op once every trial is checkpointed.
 # `resume_run.sh --check` only prints the checkpoint count.
 

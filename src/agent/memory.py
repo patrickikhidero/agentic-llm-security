@@ -15,7 +15,7 @@ class SessionMemory:
     """
     Manages cross-step memory within a single execution session.
     Persistent cross-session memory is disabled by default because
-    it represents a significant attack surface for temporal displacement
+    it represents a significant attack surface for tempora1 displacement
     injection attacks (Adversa AI, 2026).
     """
 
