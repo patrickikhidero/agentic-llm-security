@@ -51,7 +51,7 @@ Requires Python 3.11. The first run needs internet access to download the
 `all-MiniLM-L6-v2` embedding model from Hugging Face.
 
 ```bash
-git clone https://github.com/[your-username]/agentic-llm-security.git
+git clone https://github.com/patrickikhidero/agentic-llm-security.git
 cd agentic-llm-security
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
@@ -90,6 +90,7 @@ python scripts/paper_pipeline_figure.py figure1.png
 - [`docs/experimental_design.md`](docs/experimental_design.md): pipeline, tasks, protocol, metrics
 - [`docs/attack_scenarios.md`](docs/attack_scenarios.md): the exact attack combinations run
 - [`FINDINGS.md`](FINDINGS.md): evaluation log
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): setup, scoring, and adding attack classes or defense layers
 
 Metrics: **ASR**, the share of trials in which the agent attempted the attacker's action;
 **TCR**, the share of tasks completed; **utility**, layered TCR ÷ baseline TCR; **FPR**, how

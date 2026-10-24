@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: >-
+  If you use this code, please cite the paper it accompanies (preferred
+  citation below) and, where relevant, this repository.
+title: "agentic-llm-security: experimental pipeline for attack and defense evaluation in enterprise agentic LLM pipelines"
+type: software
+authors:
+  - family-names: Ikhidero
+    given-names: Patrick O.
+repository-code: "https://github.com/patrickikhidero/agentic-llm-security"
+license: MIT
+keywords:
+  - agentic LLM security
+  - prompt injection
+  - goal hijacking
+  - tool poisoning
+  - defense-in-depth
+references:
+  - type: generic
+    title: "LLM Integration Security in Enterprise Backend Systems: A Systematic Review of Emerging Attack Surfaces in Production API Environments"
+    authors:
+      - family-names: Ikhidero
+        given-names: Patrick O.
+    year: 2026
+    publisher:
+      name: Zenodo
+    doi: 10.5281/zenodo.21182170
+preferred-citation:
+  type: generic
+  title: "An Empirical Evaluation of Attack and Defense Dynamics in Enterprise Agentic LLM Pipelines"
+  authors:
+    - family-names: Ikhidero
+      given-names: Patrick O.
+  year: 2026
+  publisher:
+    name: Zenodo
