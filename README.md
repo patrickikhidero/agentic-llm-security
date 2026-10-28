@@ -1,7 +1,9 @@
 # Agentic LLM Pipeline Security — Experimental Repository
 
 **Companion code for:**
-> Ikhidero, P. O. (2026). *An Empirical Evaluation of Attack and Defense Dynamics in Enterprise Agentic LLM Pipelines.* Zenodo. [DOI to be assigned]
+> Ikhidero, P. O. (2026). *An Empirical Evaluation of Attack and Defense Dynamics in Enterprise Agentic LLM Pipelines.* Zenodo. https://doi.org/10.5281/zenodo.23628772
+
+**Software archive (Zenodo):** https://doi.org/10.5281/zenodo.23717855
 
 **Prior work:**
 > Ikhidero, P. O. (2026). *LLM Integration Security in Enterprise Backend Systems: A Systematic Review of Emerging Attack Surfaces in Production API Environments.* Zenodo. https://doi.org/10.5281/zenodo.21182170
@@ -77,7 +79,8 @@ to continue.
 
 ## Reproducing the paper
 
-The trial data will be published at [data DOI]. Place it in `data/results/`, then:
+The trial data are published with the paper at https://doi.org/10.5281/zenodo.23628772. Place the data files in
+`data/results/`, then:
 
 ```bash
 python scripts/paper_stats.py --json data/results/paper_stats.json   # Table 1 and all statistics
@@ -110,6 +113,6 @@ Code: MIT — see [`LICENSE`](LICENSE).
                in Enterprise Agentic {LLM} Pipelines},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {[to be assigned on upload]}
+  doi       = {10.5281/zenodo.23628772}
 }
 ```

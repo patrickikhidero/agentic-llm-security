@@ -8,7 +8,7 @@ exposed over HTTP by the FastAPI app below for interactive/manual use.
 
 This is the primary attack surface evaluated in:
   Ikhidero, P. O. (2026). An Empirical Evaluation of Attack and Defense Dynamics in
-  Enterprise Agentic LLM Pipelines. Zenodo. [DOI to be assigned]
+  Enterprise Agentic LLM Pipelines. Zenodo. https://doi.org/10.5281/zenodo.23628772
 
 Attack injection: `Pipeline.run(..., attack_injection={"type": ..., "scenario": ...})`
 lets the evaluation runner mount goal-hijacking (mid-execution response poisoning),

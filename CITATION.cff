@@ -8,6 +8,7 @@ authors:
   - family-names: Ikhidero
     given-names: Patrick O.
 repository-code: "https://github.com/patrickikhidero/agentic-llm-security"
+doi: 10.5281/zenodo.23717855
 license: MIT
 keywords:
   - agentic LLM security
@@ -34,3 +35,4 @@ preferred-citation:
   year: 2026
   publisher:
     name: Zenodo
+  doi: 10.5281/zenodo.23628772
